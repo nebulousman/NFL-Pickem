@@ -34,6 +34,12 @@ else:
         'view the first one')
     print(odds_json['data'][0])
     
+#put into dataframe and normalize
+df = pd.io.json.json_normalize(odds_json['data'])
+
+# df col6 'sites' has all the odds in it - need to break down further into same dataframe
+odds = pd.io.json.json_normalize(df.sites[0])
+
 # check usage
 print('Remaining requests', odds_response.headers['x-requests-remaining'])
 print('used requests', odds_response.headers['x-requests-used'])
