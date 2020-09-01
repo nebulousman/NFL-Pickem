@@ -10,6 +10,7 @@ import json
 import requests
 import re
 import time
+import datetime
 
 # the-odd-api API key - free acct allows up to 500 calls per month
 api_key = '[insertkey]'
@@ -85,8 +86,33 @@ for item in columns_list:
 for item in special_cols:
     current_odds[item] = odds_json_flat[item]
     
-#convert start date time DOES NOT WORK
-current_odds['commence_time'] = pd.to_datetime(current_odds['commence_time'], unit='s')
+# select cols using wildcards
+current_odds = current_odds.filter(regex='team|time|site_nice|update|odds_spreads_points|count')
+
+# rename columns
+new_cols = ['date',
+            'site1','site1updated','site1_pointspread_0','site1_pointspread_1',
+            'site2','site2updated','site2_pointspread_0','site2_pointspread_1',
+            'site3','site3updated','site3_pointspread_0','site3_pointspread_1',
+            'site4','site4updated','site4_pointspread_0','site4_pointspread_1',
+            'site5','site5updated','site5_pointspread_0','site5_pointspread_1',
+            'site6','site6updated','site6_pointspread_0','site6_pointspread_1',
+            'site7','site7updated','site7_pointspread_0','site7_pointspread_1',
+            'site8','site8updated','site8_pointspread_0','site8_pointspread_1',
+            'site9','site9updated','site9_pointspread_0','site9_pointspread_1']
+
+current_odds.rename(columns=dict(zip(current_odds.columns[[2,4,5,6,7,8,9,10,
+                                                           11,12,13,14,15,16,
+                                                           17,18,19,20,21,22,
+                                                           23,24,25,26,27,28,
+                                                           29,30,31,32,33,34,
+                                                           35,36,37,38,39,40]], 
+                                     new_cols)),inplace=True)
+
+#convert commence_time from epoch and insert in 2 new columns day hour
+current_odds['date'] = pd.to_datetime(current_odds['date'], unit='s', utc=True).dt.tz_convert(tz="US/Eastern")
+current_odds['day'] = pd.to_datetime(current_odds['date'], dayfirst=True).dt.strftime('%A %B %d')
+current_odds['hour'] = pd.to_datetime(current_odds['date'], dayfirst=True).dt.strftime('%I:%M %p')
 
 # export to csv for viewing
 current_odds.to_csv('current_odds.csv', index=False)
