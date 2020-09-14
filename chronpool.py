@@ -106,13 +106,59 @@ current_odds.rename(columns=dict(zip(current_odds.columns[[2,4,5,6,7,8,9,10,
                                                            17,18,19,20,21,22,
                                                            23,24,25,26,27,28,
                                                            29,30,31,32,33,34,
-                                                           35,36,37,38,39,40]], 
+                                                           35,36,37,38,39]], 
                                      new_cols)),inplace=True)
 
 #convert commence_time from epoch and insert in 2 new columns day hour
 current_odds['date'] = pd.to_datetime(current_odds['date'], unit='s', utc=True).dt.tz_convert(tz="US/Eastern")
 current_odds['day'] = pd.to_datetime(current_odds['date'], dayfirst=True).dt.strftime('%A %B %d')
 current_odds['hour'] = pd.to_datetime(current_odds['date'], dayfirst=True).dt.strftime('%I:%M %p')
+
+# save copy for possible audit
+current_odds.to_csv('oddsdownload.csv', index=False)
+
+# select needed columns
+current_odds = current_odds.iloc[:, : 40]
+
+# select the most common point spread from sources in new cols
+current_odds['pointspread_0'] = current_odds.filter(regex='pointspread_0').mode(axis=1).iloc[:,0]
+current_odds['pointspread_1'] = current_odds.filter(regex='pointspread_1').mode(axis=1).iloc[:,0]
+
+
+# drop pointspread source cols
+current_odds.drop(['site1','site1updated','site1_pointspread_0','site1_pointspread_1',
+        'site2','site2updated','site2_pointspread_0','site2_pointspread_1',
+        'site3','site3updated','site3_pointspread_0','site3_pointspread_1',
+        'site4','site4updated','site4_pointspread_0','site4_pointspread_1',
+        'site5','site5updated','site5_pointspread_0','site5_pointspread_1',
+        'site6','site6updated','site6_pointspread_0','site6_pointspread_1',
+        'site7','site7updated','site7_pointspread_0','site7_pointspread_1',
+        'site8','site8updated','site8_pointspread_0','site8_pointspread_1',
+        'site9','site9updated','site9_pointspread_0','site9_pointspread_1'], 
+        axis=1, inplace=True)
+
+#convert commence_time from epoch and insert in 2 new columns day hour
+current_odds['date'] = pd.to_datetime(current_odds['date'], unit='s', utc=True).dt.tz_convert(tz="US/Eastern")
+current_odds['day'] = pd.to_datetime(current_odds['date'], dayfirst=True).dt.strftime('%A %B %d')
+current_odds['hour'] = pd.to_datetime(current_odds['date'], dayfirst=True).dt.strftime('%I:%M %p')
+current_odds['date'] = pd.to_datetime(current_odds['date'].dt.strftime('%Y-%m-%d'))
+
+# request the NFL week number for input
+week_entry = input('enter NFL week number - format must be a number: ')
+current_odds['Week']= week_entry
+
+# request date range for that week
+date_entry_start = input('enter start of NFL week - format must be YYYY-MM-DD: ')
+start_date = pd.Timestamp(date_entry_start)
+
+date_entry_end = input('enter end of NFL week - format must be YYYY-MM-DD: ')
+end_date = pd.Timestamp(date_entry_end)
+
+# mask for the week
+thisweek = (current_odds['date'] >= start_date) & (current_odds['date'] <= end_date)
+# apply mask to filter the date range
+current_odds = current_odds.loc[thisweek]
+
 
 # export to csv for viewing
 current_odds.to_csv('current_odds.csv', index=False)
