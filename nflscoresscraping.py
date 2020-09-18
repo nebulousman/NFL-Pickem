@@ -11,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 # get week NFL results
 
@@ -25,22 +26,28 @@ statrows = ['PassYds','RushYds','RecYds']
 scores = scores[~scores[0].isin(statrows)]
 
 
-## ignore below ##
-## above code might be easier way to accomplish the goal of retrieving results in a dataframe
-# headers
-headers = {
-    'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36"
-    }
+#rename columns
+scores = scores.rename(columns={scores.columns[0]:"team"})
+scores = scores.rename(columns={scores.columns[1]:"score"})
+scores = scores.rename(columns={scores.columns[2]:"status"})
 
-# send request to download the data
-page = requests.request("GET", url, headers=headers)
+# request the NFL week number and add column with value
+week_entry = input('enter NFL week number - format must be a number: ')
+scores['week']= week_entry
 
-# parse the downloaded data
-data = BeautifulSoup(page.text, 'html.parser')
+# save dataframe for future audit
+scores.to_csv('scoresdownload.csv'+ str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S')), index=False)
 
-# extract week's results
-scores = data.find_all("div", {"class": "game_summaries"})
 
-print(scores)
+# introduce ID 
+for i in scores['team']:
+#add IDs
 
-# need to parse scores and create dataframe with date, team names, scores, Final or not
+
+# add scores to season data
+to_map = scores[scores.week==week_entry].set_index('teamID')['score']
+
+to_update = games.week==week_entry
+
+games.loc[to_update, 'score_0'] = games.loc[to_update,'team_0'].map(to_map)
+games.loc[to_update, 'score_1'] = games.loc[to_update,'team_1'].map(to_map)
