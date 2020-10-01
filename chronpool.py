@@ -10,7 +10,10 @@ import json
 import requests
 import re
 import time
-import datetime
+from datetime import datetime
+import os
+
+path = '[insertpath]'
 
 # the-odd-api API key - free acct allows up to 500 calls per month
 api_key = '[insertkey]'
@@ -109,10 +112,33 @@ current_odds.rename(columns=dict(zip(current_odds.columns[[2,4,5,6,7,8,9,10,
                                                            35,36,37,38,39]], 
                                      new_cols)),inplace=True)
 
+# save copy for possible audit
+current_odds.to_csv(path + 'audit/odds/oddsdownload' + str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))+'.csv', index=False)
+
+# select needed columns
+current_odds = current_odds.iloc[:, : 28]
+
+# select the most common point spread from sources in new cols
+current_odds['pointspread_0'] = current_odds.filter(regex='pointspread_0').mode(axis=1).iloc[:,0]
+current_odds['pointspread_1'] = current_odds.filter(regex='pointspread_1').mode(axis=1).iloc[:,0]
+
+
+# drop pointspread source cols
+current_odds.drop(['site1','site1updated','site1_pointspread_0','site1_pointspread_1',
+        'site2','site2updated','site2_pointspread_0','site2_pointspread_1',
+        'site3','site3updated','site3_pointspread_0','site3_pointspread_1',
+        'site4','site4updated','site4_pointspread_0','site4_pointspread_1',
+        'site5','site5updated','site5_pointspread_0','site5_pointspread_1',
+        'site6','site6updated','site6_pointspread_0','site6_pointspread_1'], 
+        axis=1, inplace=True)
+
+
+
 #convert commence_time from epoch and insert in 2 new columns day hour
 current_odds['date'] = pd.to_datetime(current_odds['date'], unit='s', utc=True).dt.tz_convert(tz="US/Eastern")
 current_odds['day'] = pd.to_datetime(current_odds['date'], dayfirst=True).dt.strftime('%A %B %d')
 current_odds['hour'] = pd.to_datetime(current_odds['date'], dayfirst=True).dt.strftime('%I:%M %p')
+current_odds['date'] = pd.to_datetime(current_odds['date'].dt.strftime('%Y-%m-%d'))
 
 # save copy for possible audit
 current_odds.to_csv('oddsdownload.csv', index=False)
@@ -131,10 +157,7 @@ current_odds.drop(['site1','site1updated','site1_pointspread_0','site1_pointspre
         'site3','site3updated','site3_pointspread_0','site3_pointspread_1',
         'site4','site4updated','site4_pointspread_0','site4_pointspread_1',
         'site5','site5updated','site5_pointspread_0','site5_pointspread_1',
-        'site6','site6updated','site6_pointspread_0','site6_pointspread_1',
-        'site7','site7updated','site7_pointspread_0','site7_pointspread_1',
-        'site8','site8updated','site8_pointspread_0','site8_pointspread_1',
-        'site9','site9updated','site9_pointspread_0','site9_pointspread_1'], 
+        'site6','site6updated','site6_pointspread_0','site6_pointspread_1'], 
         axis=1, inplace=True)
 
 #convert commence_time from epoch and insert in 2 new columns day hour
